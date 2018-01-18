@@ -1,5 +1,6 @@
 defmodule Recursive do
     
+    # Make the product of m and n obly using +.
     def product(m, n) do
         if m == 0 do
             0
@@ -8,6 +9,7 @@ defmodule Recursive do
         end
     end
 
+    # Make the product function with cases.
     def product2(m, n) do
         case m do
             0 ->
@@ -17,6 +19,7 @@ defmodule Recursive do
         end
     end
 
+    # Make the product function using pattern matching.
     def product3(0, _) do
         0
     end
@@ -24,6 +27,7 @@ defmodule Recursive do
         n + product3(m-1, n)
     end
 
+    # Calculate x^n using the product function and not using *.
     def exp(_, 0) do
         1
     end
@@ -31,6 +35,7 @@ defmodule Recursive do
         product3(x, exp(x, y-1))
     end
 
+    # Make the exp function faster
     def exp_fast(_, 0) do
         1
     end

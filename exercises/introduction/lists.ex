@@ -1,5 +1,6 @@
 defmodule Lists do
     
+    # Get the nth element of the list.
     def nth(_, []) do
         []
     end
@@ -10,6 +11,7 @@ defmodule Lists do
         nth(n-1, tail)
     end
 
+    # Calculate the lenght of the list.
     def len(l) do
         len(0, l)
     end
@@ -20,6 +22,7 @@ defmodule Lists do
         len(n+1, tail)
     end
 
+    # Assume that the list only consists of integers. Make the sum of these.
     def sum([]) do
         0
     end
@@ -27,6 +30,7 @@ defmodule Lists do
         head + sum(tail)
     end
 
+    # Duplicate every element in the list.
     def duplicate([]) do
         []
     end
@@ -34,6 +38,7 @@ defmodule Lists do
         [head, head | duplicate(tail)]
     end
 
+    # Add the element x to the list if it doesn't exist already.
     def add(x, []) do
         [x]
     end
@@ -44,6 +49,7 @@ defmodule Lists do
         [head | add(x, tail)]
     end
 
+    # Remove element x from the list.
     def remove(_, []) do
         []
     end
@@ -54,6 +60,7 @@ defmodule Lists do
         [head | remove(x, tail)]
     end
 
+    # Make every element in the list unique.
     def unique([]) do
         []
     end
@@ -61,6 +68,7 @@ defmodule Lists do
         [head | unique(remove(head, tail))]
     end
 
+    # Pack up every same element of the list in another list within the list.
     def pack([]) do
         []
     end
@@ -68,10 +76,10 @@ defmodule Lists do
         
     end
 
+    # Reverse the list.
     def reverse(l) do
         reverse(l, [])
     end
-
     def reverse([], r) do
         r
     end
