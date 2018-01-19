@@ -65,15 +65,30 @@ defmodule Lists do
         []
     end
     def unique([head | tail]) do
-        [head | unique(remove(head, tail))]
+        [head | remove(head, tail) |> unique()]
     end
 
     # Pack up every same element of the list in another list within the list.
-    def pack([]) do
-        []
+    def pack(l) do
+        pack([], l, unique(l))
     end
-    def pack() do
-        
+    def pack(l, _, []) do
+        l
+    end
+    def pack([], l, [h | t]) do
+        pack([h], l, [h | t])
+    end
+    def pack([h1 | _], l, [h2 | t2]) do
+        pack([h1 | sort(h2, [], l)], l, t2)
+    end
+    def sort(_, l, []) do
+        l
+    end
+    def sort(x, [h1 | t1], [x | t2]) do
+        sort(x, [h1, x | t1], t2)
+    end
+    def sort(x, l, [h2 | t2]) do
+        sort(x, l, t2)
     end
 
     # Reverse the list.
