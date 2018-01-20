@@ -70,25 +70,24 @@ defmodule Lists do
 
     # Pack up every same element of the list in another list within the list.
     def pack(l) do
-        pack([], l, unique(l))
+        pack(l, unique(l))
     end
-    def pack(l, _, []) do
-        l
+    def pack(_, []) do
+        []
     end
-    def pack([], l, [h | t]) do
-        pack([h], l, [h | t])
+    def pack(l, [h|t]) do
+        [same_elememts(l, h) | pack(l, t)]
     end
-    def pack([h1 | _], l, [h2 | t2]) do
-        pack([h1 | sort(h2, [], l)], l, t2)
+
+    # All elements that are the same as x will be returned in a list
+    def same_elememts([], _) do
+        []
     end
-    def sort(_, l, []) do
-        l
+    def same_elememts([x|t], x) do
+        [x|same_elememts(t, x)]
     end
-    def sort(x, [h1 | t1], [x | t2]) do
-        sort(x, [h1, x | t1], t2)
-    end
-    def sort(x, l, [h2 | t2]) do
-        sort(x, l, t2)
+    def same_elememts([_|t], x) do
+        same_elememts(t, x)
     end
 
     # Reverse the list.
