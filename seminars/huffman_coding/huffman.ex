@@ -16,11 +16,14 @@ defmodule Huffman do
         decode(seq, encode)
     end
     
-    # 
+    # Function that makes frequency and tree.
     def tree(sample) do
         freq = freq(sample)
         huffman(freq)
     end
+
+    # Maked the encoding table.
+    # Consists of tuples with char and binary sequence.
     def encode_table([tree]) do
         make_table(elem(tree, 1), [])
     end
