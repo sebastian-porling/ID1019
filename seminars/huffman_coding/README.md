@@ -6,5 +6,5 @@ We will then use a bigger text file that we will use for the frequency as well e
 
 ## Morse
 
-We got an assignment where we were supposed to decode morsecode. 
+We got an assignment where we were supposed to decode morsecode.
 Using a decode table that were given to us.
