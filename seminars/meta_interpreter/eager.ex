@@ -29,7 +29,7 @@ defmodule Eager do
         end
     end
 
-    #
+    # 
     def eval_match(:ignore, _, env) do
         {:ok, env}
     end
@@ -46,11 +46,13 @@ defmodule Eager do
                 :fail
         end
     end
-    def eval_match({:cons, lt, rt}, {:cons, lstr , rstr}, env) do
+    def eval_match({:cons, lt, rt}, {lstr , rstr}, env) do
+        #{:ok, lstr} = eval_expr(lstr, env)
         case eval_match(lt, lstr, env) do
             :fail ->
                 :fail
             {:ok, env} ->
+                #{:ok, rstr} = eval_expr(rstr, env)
                 eval_match(rt, rstr, env)
         end
     end
