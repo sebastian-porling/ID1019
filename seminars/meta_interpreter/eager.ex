@@ -28,14 +28,28 @@ defmodule Eager do
                 end
         end
     end
+    def eval_expr({:case, expr, cls}, env) do
+        case eval_expr(expr, env)  do
+            :error -> 
+                :error
+            {:ok, str} ->
+                eval_cls(cls, str, env)
+        end 
+    end
 
-    # 
+    # Evaluates match of right side with left side.
+    # If the left side is ignore then we don't evaluate the expression.
     def eval_match(:ignore, _, env) do
         {:ok, env}
     end
+    # If the left side is an atom we will?
     def eval_match({:atm, id}, _, env) do
         {:ok, env}
     end
+    # If the left side is a variable we evaluate the variable. 
+    # If it doesn't exist we add it to the enviroment and return it
+    # If its value is the same as the structure we have on right side return enviroment.
+    # Otherwise fail.
     def eval_match({:var, id}, str, env) do
         case eval_expr({:var, id}, env)  do
             :error ->
@@ -56,9 +70,23 @@ defmodule Eager do
                 eval_match(rt, rstr, env)
         end
     end
-    
     def eval_match(_, _, _), do: :fail
 
+    # Något fel här...................
+    def eval_cls([], _, _) do
+        :error
+    end
+    def eval_cls( [{:clause, ptr, seq} | cls], str, env) do
+        case eval_match(ptr, str, env) do
+            :fail ->
+                eval_cls(cls, str, env)
+            {:ok, env} ->
+                eval_seq(seq, env)
+        end 
+    end
+
+    # Function that goes through the sequence and evaluates it.
+    # And evaluates the last expression.
     def eval_seq([exp], env) do
         eval_expr(exp, env)
     end
@@ -78,6 +106,7 @@ defmodule Eager do
         end
     end
 
+    # Function that returns a list of variables.
     def extract_vars({:var, v}) do
         [{:var, v}]
     end
@@ -87,16 +116,26 @@ defmodule Eager do
     def extract_vars(:ignore) do
         [:ignore]
     end
+
+    # Main function.
     def eval(seq) do
         eval_seq(seq, Env.new())
     end
 
+    # Test function.
     def test() do
-         seq =  [{:match, {:var, :x}, {:atm,:a}},
+        seq =  [{:match, {:var, :x}, {:atm,:a}},
                 {:match, {:var, :y}, {:cons, {:var, :x}, {:atm, :b}}},
                 {:match, {:cons, :ignore, {:var, :z}}, {:var, :y}},
                 {:var, :z}]
-        eval(seq)
+        
+        seq2 = [{:match, {:var, :x}, {:atm, :a}},
+                {:case, {:var, :x},
+                    [{:clause, {:atm, :b}, [{:atm, :ops}]},
+                    {:clause, {:atm, :a}, [{:atm, :yes}]}
+                    ]} 
+                ]
+        eval(seq2)
     end
 
 end  
