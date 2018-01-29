@@ -43,7 +43,7 @@ defmodule Eager do
         {:ok, env}
     end
     # If the left side is an atom we will?
-    def eval_match({:atm, id}, _, env) do
+    def eval_match({:atm, id}, id, env) do
         {:ok, env}
     end
     # If the left side is a variable we evaluate the variable. 
@@ -72,10 +72,12 @@ defmodule Eager do
     end
     def eval_match(_, _, _), do: :fail
 
-    # Något fel här...................
+    # Function that evaluates clauses from case
+    # If no clause matches then return error
     def eval_cls([], _, _) do
         :error
     end
+    # Go through each clause... If it matches evaluate the sequence it has.
     def eval_cls( [{:clause, ptr, seq} | cls], str, env) do
         case eval_match(ptr, str, env) do
             :fail ->
