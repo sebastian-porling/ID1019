@@ -46,4 +46,23 @@ defmodule Env do
         [head | sub_remove(id, tail)]
     end
 
+    def closure([], _) do
+        []
+    end
+    def closure([free | tail], env) do
+        case lookup(free, env) do
+            nil ->
+                :error
+            {id, str} ->
+                [{id, str} | closure(tail, env)]
+        end
+    end
+
+    def args([], [], closure) do
+        closure
+    end
+    def args([par|restp], [str|rests], closure) do
+        [{par, str} | args(restp, rests, closure)]
+    end
+
 end

@@ -1,12 +1,12 @@
 defmodule Eager do
     
     # If the expression is an atom return the atom
-    def eval_expr({:atm, id}, _)  do
+    def eval_expr({:atm, id}, _, _)  do
         {:ok, id}
     end
     # If the expression is a variable look if it exists and return its value
     # Else return error
-    def eval_expr({:var, id}, env) do
+    def eval_expr({:var, id}, env, _) do
         case Env.lookup(id, env)  do
             nil ->
                 :error
@@ -15,12 +15,12 @@ defmodule Eager do
         end
     end
     # If the expression is list/tuple go through it's elements.
-    def eval_expr({:cons, rt, lt}, env) do
-        case eval_expr(rt, env) do
+    def eval_expr({:cons, rt, lt}, env, prg) do
+        case eval_expr(rt, env, prg) do
             :error ->
                 :error
             {:ok, rs} ->
-                case eval_expr(lt, env) do
+                case eval_expr(lt, env, prg) do
                     :error ->
                         :error
                     {:ok, ls} ->
@@ -28,13 +28,52 @@ defmodule Eager do
                 end
         end
     end
-    def eval_expr({:case, expr, cls}, env) do
-        case eval_expr(expr, env)  do
+    def eval_expr({:case, expr, cls}, env, prg) do
+        case eval_expr(expr, env, prg)  do
             :error -> 
                 :error
             {:ok, str} ->
-                eval_cls(cls, str, env)
+                eval_cls(cls, str, env, prg)
         end 
+    end
+
+      def eval_expr({:lambda, par, free, seq}, env, prg) do
+        case Env.closure(free, env) do
+        :error ->
+            :error
+        closure ->
+            {:ok, {:closure, par, seq, closure}}
+        end 
+    end
+
+    def eval_expr({:apply, expr, args}, env, prg) do
+        case eval_expr(expr, env, prg) do
+            :error ->
+                :error
+            {:ok, {:closure, par, seq, closure}} ->
+                case eval_args(args, env, prg) do
+                    :error ->
+                        :error
+                    strs ->
+                        env = Env.args(par, strs, closure)
+                        eval_seq(seq, env, prg)
+                end
+        end 
+    end
+
+    def eval_expr({:call, id, args}, env, prg) when is_atom(id) do
+        case List.keyfind(prg, id, 0) do
+            nil ->
+                :error
+            {_, par, seq} ->
+                case eval_args(args, env, prg) do
+                    :error ->
+                        :error
+                    strs  ->
+                        env = Env.args(par, strs, [])
+                        eval_seq(seq, env, prg)
+                end
+        end
     end
 
     # Evaluates match of right side with left side.
@@ -51,8 +90,8 @@ defmodule Eager do
     # If its value is the same as the structure we have on right side return enviroment.
     # Otherwise fail.
     def eval_match({:var, id}, str, env) do
-        case eval_expr({:var, id}, env)  do
-            :error ->
+        case Env.lookup(id, env)  do
+            nil ->
                 {:ok, Env.add(id, str, env)}
             {_, ^str} ->
                 {:ok, env}
@@ -74,27 +113,27 @@ defmodule Eager do
 
     # Function that evaluates clauses from case
     # If no clause matches then return error
-    def eval_cls([], _, _) do
+    def eval_cls([], _, _, _) do
         :error
     end
     # Go through each clause... If it matches evaluate the sequence it has.
-    def eval_cls( [{:clause, ptr, seq} | cls], str, env) do
+    def eval_cls( [{:clause, ptr, seq} | cls], str, env, prg) do
         case eval_match(ptr, str, env) do
             :fail ->
-                eval_cls(cls, str, env)
+                eval_cls(cls, str, env, prg)
             {:ok, env} ->
-                eval_seq(seq, env)
+                eval_seq(seq, env, prg)
         end 
     end
 
     # Function that goes through the sequence and evaluates it.
     # And evaluates the last expression.
-    def eval_seq([exp], env) do
-        eval_expr(exp, env)
+    def eval_seq([exp], env, prg) do
+        eval_expr(exp, env, prg)
     end
-    def eval_seq([{:match, pattern, exp}|tail], env) do
-        case eval_expr(exp, env) do
-            :error -> 
+    def eval_seq([{:match, pattern, exp}|tail], env, prg) do
+        case eval_expr(exp, env, prg) do
+           :error -> 
                 :error
             {:ok, str}  ->
                 vars = extract_vars(pattern)
@@ -103,11 +142,10 @@ defmodule Eager do
                     :fail ->
                         :error
                     {:ok, env} ->
-                        eval_seq(tail, env)
+                        eval_seq(tail, env, prg)
                 end 
         end
     end
-
     # Function that returns a list of variables.
     def extract_vars({:var, v}) do
         [{:var, v}]
@@ -115,13 +153,25 @@ defmodule Eager do
     def extract_vars({:cons, lt, rt}) do
         extract_vars(lt) ++ extract_vars(rt)
     end
-    def extract_vars(:ignore) do
-        [:ignore]
+    def extract_vars(_) do
+        []
     end
 
     # Main function.
-    def eval(seq) do
-        eval_seq(seq, Env.new())
+    def eval(seq, prg) do
+        eval_seq(seq, Env.new(), prg)
+    end
+
+    def eval_args([], _, _) do
+        []
+    end
+    def eval_args([arg | rest], env, prg) do
+        case eval_expr(arg, env, prg) do
+            :error ->
+                :error
+            {:ok, str} ->
+                [str | eval_args(rest, env, prg)]
+        end
     end
 
     # Test function.
@@ -137,7 +187,30 @@ defmodule Eager do
                     {:clause, {:atm, :a}, [{:atm, :yes}]}
                     ]} 
                 ]
-        eval(seq2)
+        seq3 = [{:match, {:var, :x}, {:atm, :a}},
+                {:match, {:var, :f},
+                    {:lambda, [:y], [:x], [{:cons, {:var, :x}, {:var, :y}}]}},
+                {:apply, {:var, :f}, [{:atm, :b}]}
+                ]
+         prgm = [{:append, [:x, :y],
+                    [{:case, {:var, :x},
+                        [{:clause, {:atm, []}, [{:var, :y}]},
+                        {:clause, {:cons, {:var, :hd}, {:var, :tl}},
+                            [{:cons,
+                                {:var, :hd},
+                                {:call, :append, [{:var, :tl}, {:var, :y}]}}]
+                        }] 
+                    }]
+                }]
+                
+        seq4 = [{:match, {:var, :x},
+                    {:cons, {:atm, :a}, {:cons, {:atm, :b}, {:atm, []}}}},
+                {:match, {:var, :y},
+                    {:cons, {:atm, :c}, {:cons, {:atm, :d}, {:atm, []}}}},
+                {:call, :append, [{:var, :x}, {:var, :y}]}
+                ]
+        seq5 = [{:call, :append, [{:var, :x}, {:var, :y}]}]
+        eval(seq4, prgm)
     end
 
 end  
