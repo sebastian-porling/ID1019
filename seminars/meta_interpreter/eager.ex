@@ -28,6 +28,7 @@ defmodule Eager do
                 end
         end
     end
+    # Evaluates a case expression
     def eval_expr({:case, expr, cls}, env, prg) do
         case eval_expr(expr, env, prg)  do
             :error -> 
@@ -36,8 +37,8 @@ defmodule Eager do
                 eval_cls(cls, str, env, prg)
         end 
     end
-
-      def eval_expr({:lambda, par, free, seq}, env, prg) do
+    # Evaluates a lambda function
+    def eval_expr({:lambda, par, free, seq}, env, prg) do
         case Env.closure(free, env) do
         :error ->
             :error
@@ -45,7 +46,7 @@ defmodule Eager do
             {:ok, {:closure, par, seq, closure}}
         end 
     end
-
+    # Evaluates a call to a lambda function
     def eval_expr({:apply, expr, args}, env, prg) do
         case eval_expr(expr, env, prg) do
             :error ->
@@ -60,7 +61,7 @@ defmodule Eager do
                 end
         end 
     end
-
+    # Evaluates a function call to a named function
     def eval_expr({:call, id, args}, env, prg) when is_atom(id) do
         case List.keyfind(prg, id, 0) do
             nil ->
@@ -99,16 +100,16 @@ defmodule Eager do
                 :fail
         end
     end
+    # Evaluates the matching with constructed structures.
     def eval_match({:cons, lt, rt}, {lstr , rstr}, env) do
-        #{:ok, lstr} = eval_expr(lstr, env)
         case eval_match(lt, lstr, env) do
             :fail ->
                 :fail
             {:ok, env} ->
-                #{:ok, rstr} = eval_expr(rstr, env)
                 eval_match(rt, rstr, env)
         end
     end
+    # Only if it's not ignore, atom, variable or constructed structere
     def eval_match(_, _, _), do: :fail
 
     # Function that evaluates clauses from case
@@ -162,6 +163,7 @@ defmodule Eager do
         eval_seq(seq, Env.new(), prg)
     end
 
+    # Evaluates argument in given envirement, returns a list of structures.
     def eval_args([], _, _) do
         []
     end
@@ -176,22 +178,25 @@ defmodule Eager do
 
     # Test function.
     def test() do
+        # For testing sequence
         seq =  [{:match, {:var, :x}, {:atm,:a}},
                 {:match, {:var, :y}, {:cons, {:var, :x}, {:atm, :b}}},
                 {:match, {:cons, :ignore, {:var, :z}}, {:var, :y}},
                 {:var, :z}]
-        
+        # For testing clauses
         seq2 = [{:match, {:var, :x}, {:atm, :a}},
                 {:case, {:var, :x},
                     [{:clause, {:atm, :b}, [{:atm, :ops}]},
                     {:clause, {:atm, :a}, [{:atm, :yes}]}
                     ]} 
                 ]
+        # For testing lambda functions
         seq3 = [{:match, {:var, :x}, {:atm, :a}},
                 {:match, {:var, :f},
                     {:lambda, [:y], [:x], [{:cons, {:var, :x}, {:var, :y}}]}},
                 {:apply, {:var, :f}, [{:atm, :b}]}
                 ]
+        # For testing named functions.
          prgm = [{:append, [:x, :y],
                     [{:case, {:var, :x},
                         [{:clause, {:atm, []}, [{:var, :y}]},
@@ -203,13 +208,14 @@ defmodule Eager do
                     }]
                 }]
                 
+        # For testing named functions.
         seq4 = [{:match, {:var, :x},
                     {:cons, {:atm, :a}, {:cons, {:atm, :b}, {:atm, []}}}},
                 {:match, {:var, :y},
                     {:cons, {:atm, :c}, {:cons, {:atm, :d}, {:atm, []}}}},
                 {:call, :append, [{:var, :x}, {:var, :y}]}
                 ]
-        seq5 = [{:call, :append, [{:var, :x}, {:var, :y}]}]
+
         eval(seq4, prgm)
     end
 
