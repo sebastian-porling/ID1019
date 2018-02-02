@@ -1,6 +1,6 @@
 defmodule Eager do
     
-    # If the expression is an atom return the atom
+    # * If the expression is an atom return the atom
     def eval_expr({:atm, id}, _, _)  do
         {:ok, id}
     end
@@ -119,6 +119,8 @@ defmodule Eager do
     end
     # Go through each clause... If it matches evaluate the sequence it has.
     def eval_cls( [{:clause, ptr, seq} | cls], str, env, prg) do
+        vars = extract_vars(ptr)
+        env = Env.remove(vars, env)
         case eval_match(ptr, str, env) do
             :fail ->
                 eval_cls(cls, str, env, prg)
