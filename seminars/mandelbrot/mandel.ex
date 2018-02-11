@@ -19,7 +19,7 @@ defmodule Mandel do
         l
     end
     defp row(width, height, trans, depth, l) do
-        r = Brot.mandelbrot(trans.(width, height), depth)
+        r = Brot.mandelbrot_nif(trans.(width, height), depth)
         pixel = Color.convert(r, depth)
         row(width - 1, height, trans, depth, [pixel | l])
     end

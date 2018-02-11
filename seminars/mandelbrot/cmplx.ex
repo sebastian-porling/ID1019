@@ -23,4 +23,29 @@ defmodule Cmplx do
         :math.sqrt(r*r + i*i)
     end
 
+    def mandelbrot({:cmplx, cr, ci}, m) do
+        zr = 0
+        zi = 0
+        test(0, zr, zi, cr, ci, m)
+    end
+    defp test(m, _zr, _zi, _cr, _ci, m) do
+        0
+    end
+    defp test(i, zr, zi, cr, ci, m) do
+        zr2 = zr*zr
+        zi2 = zi*zi
+        a2 = zr2 + zi2
+        if a2 < 4.0 do
+            sr = zr2 - zi2 + cr
+            si = 2*zr*zi + ci
+            test(i+1, sr, si, cr, ci, m)
+        else
+            i
+        end
+    end
+
+    def mandelbrot_nif({:cmplx, cr, ci}, m) do
+        Depth.test(cr, ci, m)
+    end
+
 end

@@ -23,5 +23,12 @@ defmodule Brot do
             i
         end
     end
+    def mandelbrot_impr(c, m) do
+        Cmplx.mandelbrot(c, m)
+    end
+
+    def mandelbrot_nif(c, m) do
+        Cmplx.mandelbrot_nif(c, m)
+    end
 
 end
