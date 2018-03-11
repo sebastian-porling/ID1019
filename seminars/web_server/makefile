@@ -1,0 +1,2 @@
+
+	elxirc *.ex.
